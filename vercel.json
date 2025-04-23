@@ -5,6 +5,12 @@
         "src": "api/index.js",
         "use": "@vercel/node"
       }
+    ],
+    "routes": [
+      {
+        "src": "/send-email",
+        "dest": "/api/index.js"
+      }
     ]
   }
   
