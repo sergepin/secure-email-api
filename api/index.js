@@ -1,17 +1,16 @@
-import express from 'express'
-import cors from 'cors'
-import nodemailer from 'nodemailer'
-import dotenv from 'dotenv'
-import rateLimit from 'express-rate-limit'
+// api/index.js
+import express from 'express';
+import nodemailer from 'nodemailer';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
 
-dotenv.config()
+dotenv.config();
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+app.use(express.json());
 
-const allowedOrigin = process.env.ALLOWED_ORIGIN
-const isDev = process.env.NODE_ENV === 'development'
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
+const isDev = process.env.NODE_ENV === 'development';
 
 // Rate limit configurado según el entorno
 const limiter = rateLimit({
@@ -20,30 +19,30 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests' }
-})
-app.use('/send-email', limiter)
+});
+app.use('/send-email', limiter);
 
 // Middleware de seguridad
 app.use((req, res, next) => {
-  const origin = req.get('origin') || req.get('referer') || ''
-  const apiKey = req.headers['x-api-key']
+  const origin = req.get('origin') || req.get('referer') || '';
+  const apiKey = req.headers['x-api-key'];
 
   if (apiKey !== process.env.API_KEY || (origin && !origin.startsWith(allowedOrigin))) {
-    return res.status(403).json({ message: 'Access denied' })
+    return res.status(403).json({ message: 'Access denied' });
   }
 
-  next()
-})
+  next();
+});
 
 app.post('/send-email', async (req, res) => {
-  const { name, email, subject, message } = req.body
+  const { name, email, subject, message } = req.body;
 
   if (!name || !email || !subject || !message) {
-    return res.status(400).json({ message: 'Invalid request' })
+    return res.status(400).json({ message: 'Invalid request' });
   }
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Internal server error' });
   }
 
   try {
@@ -55,7 +54,7 @@ app.post('/send-email', async (req, res) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
       }
-    })
+    });
 
     await transporter.sendMail({
       from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
@@ -71,15 +70,13 @@ app.post('/send-email', async (req, res) => {
         <p><strong>Message:</strong></p>
         <p>${message.replace(/\n/g, '<br>')}</p>
       `
-    })
+    });
 
-    res.status(200).json({ message: 'Message sent' })
+    res.status(200).json({ message: 'Message sent' });
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: 'Internal server error' });
   }
-})
+});
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
-})
+// Exporta la aplicación para que Vercel la maneje
+export default app;
