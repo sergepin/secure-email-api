@@ -1,8 +1,8 @@
-// api/index.js
 import express from 'express';
 import nodemailer from 'nodemailer';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -12,17 +12,21 @@ app.use(express.json());
 const allowedOrigin = process.env.ALLOWED_ORIGIN;
 const isDev = process.env.NODE_ENV === 'development';
 
-// Rate limit configurado según el entorno
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-api-key']
+}));
+
 const limiter = rateLimit({
-  windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min en dev, 15 en prod
-  max: isDev ? 50 : 5, // más requests en dev
+  windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000,
+  max: isDev ? 50 : 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests' }
 });
 app.use('/send-email', limiter);
 
-// Middleware de seguridad
 app.use((req, res, next) => {
   const origin = req.get('origin') || req.get('referer') || '';
   const apiKey = req.headers['x-api-key'];
@@ -78,5 +82,4 @@ app.post('/send-email', async (req, res) => {
   }
 });
 
-// Exporta la aplicación para que Vercel la maneje
 export default app;
