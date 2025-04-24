@@ -9,11 +9,21 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const allowedOrigin = process.env.ALLOWED_ORIGIN;
+const allowedOrigins = [
+  'https://sergiopinzon.dev',
+  'https://www.sergiopinzon.dev'
+];
+
 const isDev = process.env.NODE_ENV === 'development';
 
 app.use(cors({
-  origin: allowedOrigin,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-api-key']
 }));
@@ -31,7 +41,7 @@ app.use((req, res, next) => {
   const origin = req.get('origin') || req.get('referer') || '';
   const apiKey = req.headers['x-api-key'];
 
-  if (apiKey !== process.env.API_KEY || (origin && !origin.startsWith(allowedOrigin))) {
+  if (apiKey !== process.env.API_KEY || (origin && !allowedOrigins.some(o => origin.startsWith(o)))) {
     return res.status(403).json({ message: 'Access denied' });
   }
 
